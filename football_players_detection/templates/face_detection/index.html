@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    {% load staticfiles %}
+    <title>Title</title>
+</head>
+
+<style>
+.content {
+  max-width: 500px;
+  margin: auto;
+}
+</style>
+
+<body>
+    <div class="content">
+        Select a player you want to see in a video: <br/>
+        <img src={% static 'images/iniesta.jpg' %} height="100" width="100" alt="Iniesta">
+        <img src={% static 'images/puyol.jpg' %} height="100" width="100" alt="Puyol">
+        <img src={% static 'images/ronaldhino.jpg' %} height="100" width="100" alt="ronaldhino"> <br/>
+
+        Paste your youtube video link:
+        <form id="face-form" action="/face_detection/" method="post">
+            {%  csrf_token %}
+            <h3 class="header">Your Video Face Detection</h3>
+            <p class="error"></p>
+
+            <input type="text" name="q" style="width: 300px;" placeholder="past your link">
+
+            <input type="submit" value="Submit">
+        </form>
+
+
+
+    </div>
+
+</body>
+</html>
