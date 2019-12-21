@@ -1,7 +1,10 @@
 from django.shortcuts import render
 from django.http import HttpResponse
 
+import os
 # Create your views here.
 
+
 def index(request):
-    return HttpResponse("Hola")
+
+    return render(request, 'face_detection/index.html')
