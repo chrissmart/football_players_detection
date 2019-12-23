@@ -1,0 +1,14 @@
+1. set python 3.5 as the base
+2. install required packages
+pip install scipy==1.1.0
+pip install cmake
+pip install dlib
+pip install face_recognition==0.1.11
+
+
+# python dependency版控衝突的問題:
+face_recognition 需要 scipy 的版本是1.1.0
+但是python 3.8無法接受1.1.0的scipy
+換言之，python3.8無法接受face_recognition
+
+下個嘗試solution，降python version來建立virtual env 
