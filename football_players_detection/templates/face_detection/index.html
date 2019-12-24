@@ -25,15 +25,18 @@
             {%  csrf_token %}
             <h3 class="header">Your Video Face Detection</h3>
             <p class="error"></p>
-
             <input type="text" name="q" style="width: 300px;" placeholder="past your link">
 
+            <h3 class="header">Tell me which player you want to find: <br/>
+                               0:Iniesta, 1:Puyol, 2:Ronaldhino <br/>
+            </h3>
+
+            <input type="text" name="player" style="width: 300px;" placeholder="id of player">
             <input type="submit" value="Submit">
         </form>
-
-
-
+        <img src={% static 'images/image_found_in_video.jpg' %} height="100" width="100" alt="found_player"> <br/>
     </div>
+
 
 </body>
 </html>

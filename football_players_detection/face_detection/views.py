@@ -57,13 +57,23 @@ def index(request):
     # download the video
     if request.POST:
         video_link = request.POST['q'] # https://www.youtube.com/watch?v=LYrFkaMx6e4
-
-    video_download(download_video_or_not = 0, video_link = video_link)
+        video_download(download_video_or_not = 0, video_link = video_link)
 
     # scene detection for the appointed video
-    print(os.listdir())
+    # print(os.listdir())
     video_path = r'10 Best Barcelona Players Of All Time-LYrFkaMx6e4.mp4'
     scene_list = find_scenes(video_path)
+    # extract key scene
+    scene_frames, scene_frames_time = extract_key_scene(scene_list)
+
+    """
+    Section 3: Image Search in the Video
+    """
+    if request.POST:
+        print("Post Triggered")
+        player_to_be_found_no = request.POST['player']
+        image_to_be_found_ind = int(player_to_be_found_no)
+        video_search(target_image_embeddings_list, scene_frames, scene_frames_time, image_to_be_found_ind)
 
 
     return render(request, 'face_detection/index.html')
@@ -92,7 +102,6 @@ def video_download(download_video_or_not = 1, video_link = 'https://www.youtube.
             with youtube_dl.YoutubeDL(ydl_opts) as ydl:
                 ydl.download([video])
 
-
 def face_detection_embeddings_model(image_matrix):
     """
     face detector: Histogram Oriented Gradient features (caclulate occurrences of gradient orientation in localized areas of an image)
@@ -117,7 +126,6 @@ def face_detection_embeddings_model(image_matrix):
     # no face detected
     else:
         return [], []
-
 
 def find_scenes(video_path):
     """
@@ -176,3 +184,99 @@ def find_scenes(video_path):
         video_manager.release()
 
     return scene_list
+
+def extract_key_scene(scene_list):
+    # to save frame from scene detection
+    scene_frames = []
+    scene_frames_time = []
+
+    # video capture
+    video_path = "10 Best Barcelona Players Of All Time-LYrFkaMx6e4.mp4"
+    vc = cv.VideoCapture(video_path)
+
+    # setting of parameters to capture the specified frame
+    time_length = 200.0  # length of video (seconds): 00:03:20.801
+    fps = 29.969940  # frames per second
+    print("Total Frames: ", time_length * fps)
+
+    # capture the scene to test the similarity
+    for scene in scene_list:
+        frame_seq = scene[0].get_frames()  # ranging from 0 to total number of frames (= time_length*fps - 1)
+        frame_time_code = scene[0].get_timecode()
+        vc.set(1,
+               frame_seq)  # flag CV_CAP_PROP_POS_FRAMES which is a 0-based index of the frame to be decoded/captured next
+
+        # Read the next frame from the video. If you set frame 749 above then the code will return the last frame.
+        is_capturing, frame = vc.read()
+
+        # show the frame image
+        frame = cv.cvtColor(frame,
+                            cv.COLOR_BGR2RGB)  # convert the channel of image from BGR to RGB, dimension: (720, 1280, 3)
+        scene_frames.append(frame)
+        scene_frames_time.append(frame_time_code)
+    # print("frame_seq ", frame_seq)
+    #     print("frame time code: ", frame_time_code)
+    #     plt.imshow(frame)
+    #     plt.show()
+
+    # When everything done, release the capture
+    vc.release()
+    cv.destroyAllWindows()
+
+    return (scene_frames, scene_frames_time)
+
+
+def face_distance(face_encodings, face_to_compare, MAX_DISTANCE=0.6):
+    """
+    face_encodings, face_to_compare are in the format of list array
+    similarity of face_encodings and face_to_compare is conducted
+    """
+    if len(face_to_compare) == 0:
+        return None, np.empty((0))
+
+    else:
+        face_encodings = face_encodings  # list
+        face_to_compare = face_to_compare[0]  # list of arrays
+        distances = np.round(np.linalg.norm(face_encodings - face_to_compare, axis=1), 4)  # euclidean distance
+        #         print(distances)
+        matched_face_ind = np.argmin(distances)
+        return matched_face_ind, distances[matched_face_ind]
+
+
+def face_detection_box(frame, location, name = None):
+    top, right, bottom, left = location[0]
+    color = (20, 120, 20)
+    cv.rectangle(frame, (left, top), (right, bottom), color, 3)
+
+
+def video_search(target_image_embeddings_list, scene_frames, scene_frames_time, image_to_be_found_ind):
+    # access image embeddings of the selected player
+    target_image_embeddings = np.array(target_image_embeddings_list)[image_to_be_found_ind]  # image one [image_index]
+
+    """start searching"""
+    if_player_found = False  # to identify if a player is found or not
+    # capture the frames from scene detection to accelerate the searching time
+    for frame, time_code in zip(scene_frames, scene_frames_time):
+        video_image_location, video_image_embeddings = face_detection_embeddings_model(frame)
+
+        # similarity testing
+        if video_image_embeddings != []:
+            MAX_DISTANCE = 0.605
+            matched_face_ind, distance = face_distance(target_image_embeddings, video_image_embeddings, MAX_DISTANCE)
+
+            if distance <= MAX_DISTANCE:
+                if_player_found = True
+                # visualization
+
+                if len(video_image_location) > 1:
+                    face_detection_box(frame, [video_image_location[matched_face_ind]])
+                else:
+                    face_detection_box(frame, video_image_location)
+                plt.imshow(frame)  # image found in the video
+                plt.savefig("static\\images\\image_found_in_video.jpg")
+                break
+
+    if if_player_found == False:
+        print("The assigned player is not found in the video.")
+
+    return frame
