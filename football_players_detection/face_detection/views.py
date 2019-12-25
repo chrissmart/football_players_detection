@@ -273,7 +273,7 @@ def video_search(target_image_embeddings_list, scene_frames, scene_frames_time, 
                 else:
                     face_detection_box(frame, video_image_location)
                 plt.imshow(frame)  # image found in the video
-                plt.savefig("static\\images\\image_found_in_video.jpg")
+                plt.savefig("static\\images_2\\image_found_in_video.jpg")
                 break
 
     if if_player_found == False:
